@@ -1,16 +1,19 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Switch, Alert } from 'react-native';
-import React, { useState } from 'react';
+import { StyleSheet, Text, View, Switch, Alert,TextInput,TouchableOpacity, FlatList, ScrollView } from 'react-native';
+import React, { useState,useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
 
 
 export default function App() {
-  const [data, setData] = useState([] || localStorage.getItem('data'))
+  const [data, setData] = useState([])
   const [darkMode, setDarkMode] = useState(false)
 
-  const [username, setUsername] = useState('' || localStorage.getItem('username'))
-  const [password, setPassword] = useState('' || localStorage.getItem('password'))
+  const [username, setUsername] = useState('' || AsyncStorage.getItem('username'))
+  const [password, setPassword] = useState('' || AsyncStorage.getItem('password'))
 
-  const [isLogged, setIsLogged] = useState(false || localStorage.getItem('isLogged'))
+  const [isLogged, setIsLogged] = useState(false || AsyncStorage.getItem('isLogged'))
 
   const [loading, setLoading] = useState(false)
 
@@ -22,11 +25,9 @@ export default function App() {
       Alert.alert('Please enter username and password')
     }
     else {
-      localStorage.setItem('username', username)
-      localStorage.setItem('password', password)
-      localStorage.setItem('isLogged', true)
+      AsyncStorage.setItem('isLogged', false)
       setLoading(true)
-      fetch('http://192.168.1.108:5000/', {
+      await fetch('http://192.168.1.109:5000/fetchAttendance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -39,15 +40,34 @@ export default function App() {
 
         .then(response => response.json())
         .then(data => {
+          console.log(data)
           setData(data)
-          localStorage.setItem('data', JSON.stringify(data))
+          AsyncStorage.setItem('isLogged', true)
+          AsyncStorage.setItem('username', username)
+          AsyncStorage.setItem('password', password)
           setIsLogged(true)
           setLoading(false)
         })
-        .catch(err => Alert.alert('Invalid Credentials'))
+        .catch(err => {
+          Alert.alert('Something went wrong')
+          setLoading(false)
+          console.log(err)
+        }
+        )
 
     }
   }
+
+  // useEffect(() => {
+  //   if (AsyncStorage.getItem('isLogged') === false) {
+  //     setIsLogged(false)
+  //   }
+  //   else {
+  //     setIsLogged(true)
+  //   }
+  // }, [login])
+
+
 
 
   return (
@@ -62,7 +82,8 @@ export default function App() {
           value={darkMode}
         />
       </View>
-      {isLogged && !loading ? <View style={{ flex: 1, width: '100%', padding: 20 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center',width:'100%' }}>
+      {isLogged==true ? <View style={{ flex: 1, width: '100%',marginTop:10}}>
         <View style={{ marginTop: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10, borderColor: "black", borderWidth: 1 }}>
           <Text style={[{ fontSize: 9 }]}>Course</Text>
           <Text style={[{ fontSize: 9 }]}>Total Classes</Text>
@@ -70,26 +91,30 @@ export default function App() {
           <Text style={[{ fontSize: 9 }]}>Taken Classes</Text>
           <Text style={[{ fontSize: 9 }]}>Percentage</Text>
         </View>
-        {
-          data.CourseCode && data.CourseCode.map((item, index) => {
-            return (
-              <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 5, backgroundColor: '#f5f5f5', borderColor: "black", borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderRadius: 10 }}>
-                <Text style={[{ fontSize: 9, width: 50, marginVertical: 9 }]}>{item}</Text>
-                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 14 }]}>{data.TotalClasses[index]}</Text>
-                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesTaken[index]}</Text>
-                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesAttended[index]}</Text>
-                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9 }]}>{data.AttendancePercentage[index]}</Text>
-              </View>
-            )
-          }
+        
+        <FlatList
+        style={{width: '100%' }}
+        data={data.CourseCode}
+        renderItem={({ item, index }) => {
+          return (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 5, backgroundColor: '#f5f5f5', borderColor: "black", borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderRadius: 10 }}>
+              <Text style={[{ fontSize: 9, width: 50, marginVertical: 9 }]}>{item}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 14 }]}>{data.TotalClasses[index]}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesTaken[index]}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesAttended[index]}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9 }]}>{data.AttendancePercentage[index]}</Text>
+            </View>
           )
-        }
-      </View> : !loading ? <View>
+        }}
+        keyExtractor={(item, index) => index.toString()}
+      />
+      
+      </View> :<View style={{ flex: 1, width: '100%', padding: 20,flexDirection:'column',alignItems:'center',justifyContent:'center' }}>
         <Text style={{ fontSize: 20, marginTop: 50 }}>Login</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
           <Text style={{ fontSize: 15, marginRight: 10 }}>Username</Text>
           <TextInput
-            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1 }}
+            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1,paddingHorizontal:10  }}
             onChangeText={text => setUsername(text)}
             value={username}
           />
@@ -97,15 +122,17 @@ export default function App() {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
           <Text style={{ fontSize: 15, marginRight: 10 }}>Password</Text>
           <TextInput
-            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1 }}
+            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1,paddingHorizontal:10 }}
             onChangeText={text => setPassword(text)}
             value={password}
           />
         </View>
-        <TouchableOpacity style={{ backgroundColor: 'blue', padding: 10, marginTop: 20 }} onPress={() => login()}>
+        <TouchableOpacity style={{width:90, backgroundColor: 'blue', padding: 10, marginTop: 20,flexDirection:'row',alignItems:'center',justifyContent:'center' }} onPress={login}>
           <Text style={{ color: '#fff' }}>Login</Text>
         </TouchableOpacity>
-      </View> : <Text style={{ fontSize: 20, marginTop: 50 }}>Loading...</Text>}
+      </View> }
+      </ScrollView>
+
 
       <StatusBar hidden />
     </View>

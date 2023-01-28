@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
-import json
+import json,os
 
 
 def login(username, password):
@@ -17,7 +17,7 @@ def login(username, password):
         str: HTML of the attendance page
     """
     req = requests.Session()
-    payload = json.load(open('payload.json'))
+    payload = json.load(open(os.path.join(os.path.dirname(__file__), 'payload.json')))
 
     url = 'http://erp.uit.edu:803/StudentPortal/Student/EDU_EBS_STU_Login.aspx'
 
@@ -82,17 +82,16 @@ CORS(app)
 
 
 @app.route('/fetchAttendance', methods=['POST'])
-def fetchAttendance():
+def fetch():
     if request.method == 'POST':
         credentials = request.get_json()
         username = credentials['username']
         password = credentials['password']
 
         user_login = fetch_attendance(username, password)
-        if user_login is not None:
-            return jsonify(user_login)
+        return jsonify(user_login)
 
-        return jsonify({"error": "Invalid Credentials"})
+        # return jsonify({"error": "Invalid Credentials"})
     return jsonify({"error": "Invalid Request"})
 
 
