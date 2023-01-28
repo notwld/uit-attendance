@@ -3,10 +3,10 @@ import { StyleSheet, Text, View, Switch } from 'react-native';
 import React, { useEffect, useState } from 'react';
 
 
-
 export default function App() {
   const [data, setData] = useState([])
   const [darkMode, setDarkMode] = useState(false)
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
   }
@@ -16,6 +16,8 @@ export default function App() {
       .then(data => setData(data))
       .catch(err => console.log(err))
   }, [])
+
+
   // "CourseCode": [],
   //   "TotalClasses": [],
   //   "ClassesTaken": [],
@@ -45,10 +47,10 @@ export default function App() {
           data.CourseCode && data.CourseCode.map((item, index) => {
             return (
               <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal:5, backgroundColor: '#f5f5f5', borderColor:"black",borderLeftWidth:1,borderRightWidth:1,borderBottomWidth:1, borderRadius: 10 }}>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9 }]}>{item}</Text>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9 }]}>{data.TotalClasses[index]}</Text>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9 }]}>{data.ClassesTaken[index]}</Text>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9 }]}>{data.ClassesAttended[index]}</Text>
+                <Text style={[{ fontSize: 9,width:50,marginVertical:9 }]}>{item}</Text>
+                <Text style={[{ fontSize: 9,width:60,marginVertical:9,paddingLeft:14 }]}>{data.TotalClasses[index]}</Text>
+                <Text style={[{ fontSize: 9,width:60,marginVertical:9,paddingLeft:10 }]}>{data.ClassesTaken[index]}</Text>
+                <Text style={[{ fontSize: 9,width:60,marginVertical:9,paddingLeft:10 }]}>{data.ClassesAttended[index]}</Text>
                 <Text style={[{ fontSize: 9,width:60,marginVertical:9 }]}>{data.AttendancePercentage[index]}</Text>
               </View>
             )
@@ -56,7 +58,6 @@ export default function App() {
           )
         }
       </View>
-
       <StatusBar hidden />
     </View>
   );
