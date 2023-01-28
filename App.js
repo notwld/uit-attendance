@@ -1,28 +1,55 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Switch } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, Switch, Alert } from 'react-native';
+import React, { useState } from 'react';
 
 
 export default function App() {
-  const [data, setData] = useState([])
+  const [data, setData] = useState([] || localStorage.getItem('data'))
   const [darkMode, setDarkMode] = useState(false)
+
+  const [username, setUsername] = useState('' || localStorage.getItem('username'))
+  const [password, setPassword] = useState('' || localStorage.getItem('password'))
+
+  const [isLogged, setIsLogged] = useState(false || localStorage.getItem('isLogged'))
+
+  const [loading, setLoading] = useState(false)
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
   }
-  useEffect(() => {
-    fetch('http://192.168.1.108:5000/')
-      .then(response => response.json())
-      .then(data => setData(data))
-      .catch(err => console.log(err))
-  }, [])
+  const login = async () => {
+    if (username == '' || password == '') {
+      Alert.alert('Please enter username and password')
+    }
+    else {
+      localStorage.setItem('username', username)
+      localStorage.setItem('password', password)
+      localStorage.setItem('isLogged', true)
+      setLoading(true)
+      fetch('http://192.168.1.108:5000/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          "username": username,
+          "password": password
+        })
+      })
+
+        .then(response => response.json())
+        .then(data => {
+          setData(data)
+          localStorage.setItem('data', JSON.stringify(data))
+          setIsLogged(true)
+          setLoading(false)
+        })
+        .catch(err => Alert.alert('Invalid Credentials'))
+
+    }
+  }
 
 
-  // "CourseCode": [],
-  //   "TotalClasses": [],
-  //   "ClassesTaken": [],
-  //   "ClassesAttended": [],
-  //   "AttendancePercentage": []
   return (
     <View style={[styles.container, darkMode && styles.darkTheme]}>
       <View style={styles.header}>
@@ -35,8 +62,8 @@ export default function App() {
           value={darkMode}
         />
       </View>
-      <View style={{ flex: 1, width: '100%', padding: 20 }}>
-        <View style={{marginTop:50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10, borderColor:"black",borderWidth:1}}>
+      {isLogged && !loading ? <View style={{ flex: 1, width: '100%', padding: 20 }}>
+        <View style={{ marginTop: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10, borderColor: "black", borderWidth: 1 }}>
           <Text style={[{ fontSize: 9 }]}>Course</Text>
           <Text style={[{ fontSize: 9 }]}>Total Classes</Text>
           <Text style={[{ fontSize: 9 }]}>Classes Taken</Text>
@@ -46,18 +73,40 @@ export default function App() {
         {
           data.CourseCode && data.CourseCode.map((item, index) => {
             return (
-              <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal:5, backgroundColor: '#f5f5f5', borderColor:"black",borderLeftWidth:1,borderRightWidth:1,borderBottomWidth:1, borderRadius: 10 }}>
-                <Text style={[{ fontSize: 9,width:50,marginVertical:9 }]}>{item}</Text>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9,paddingLeft:14 }]}>{data.TotalClasses[index]}</Text>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9,paddingLeft:10 }]}>{data.ClassesTaken[index]}</Text>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9,paddingLeft:10 }]}>{data.ClassesAttended[index]}</Text>
-                <Text style={[{ fontSize: 9,width:60,marginVertical:9 }]}>{data.AttendancePercentage[index]}</Text>
+              <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 5, backgroundColor: '#f5f5f5', borderColor: "black", borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderRadius: 10 }}>
+                <Text style={[{ fontSize: 9, width: 50, marginVertical: 9 }]}>{item}</Text>
+                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 14 }]}>{data.TotalClasses[index]}</Text>
+                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesTaken[index]}</Text>
+                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesAttended[index]}</Text>
+                <Text style={[{ fontSize: 9, width: 60, marginVertical: 9 }]}>{data.AttendancePercentage[index]}</Text>
               </View>
             )
           }
           )
         }
-      </View>
+      </View> : !loading ? <View>
+        <Text style={{ fontSize: 20, marginTop: 50 }}>Login</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+          <Text style={{ fontSize: 15, marginRight: 10 }}>Username</Text>
+          <TextInput
+            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1 }}
+            onChangeText={text => setUsername(text)}
+            value={username}
+          />
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+          <Text style={{ fontSize: 15, marginRight: 10 }}>Password</Text>
+          <TextInput
+            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1 }}
+            onChangeText={text => setPassword(text)}
+            value={password}
+          />
+        </View>
+        <TouchableOpacity style={{ backgroundColor: 'blue', padding: 10, marginTop: 20 }} onPress={() => login()}>
+          <Text style={{ color: '#fff' }}>Login</Text>
+        </TouchableOpacity>
+      </View> : <Text style={{ fontSize: 20, marginTop: 50 }}>Loading...</Text>}
+
       <StatusBar hidden />
     </View>
   );

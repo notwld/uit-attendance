@@ -5,7 +5,17 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
+
 def login(username, password):
+    """Login to the ERP portal and fetch the attendance page
+
+    Args:
+        username (str): Username
+        password (str): Password
+
+    Returns:
+        str: HTML of the attendance page
+    """
     req = requests.Session()
     payload = json.load(open('payload.json'))
 
@@ -13,14 +23,27 @@ def login(username, password):
 
     payload['ctl00$ContentPlaceHolder1$txtRegistrationNo_cs'] = username
     payload['ctl00$ContentPlaceHolder1$txtPassword_m6cs'] = password
-    payload['ctl00$ContentPlaceHolder1$btnlgn']= 'Login'
-    
+    payload['ctl00$ContentPlaceHolder1$btnlgn'] = 'Login'
+
     req.post(url, data=payload)
-    res = req.get('http://erp.uit.edu:803/StudentPortal/Student/EDU_EBS_STU_Dashboard.aspx')
-    res = req.get('http://erp.uit.edu:803/StudentPortal/Student/EDU_EBS_STU_Attendance.aspx')
+    res = req.get(
+        'http://erp.uit.edu:803/StudentPortal/Student/EDU_EBS_STU_Dashboard.aspx')
+    res = req.get(
+        'http://erp.uit.edu:803/StudentPortal/Student/EDU_EBS_STU_Attendance.aspx')
     return res.text
 
+
 def fetch_attendance(username, password):
+    """Fetch the attendance of the user
+
+    Args:
+        username (str): Username (eg. 2018-EE-000)
+        password (str): Password
+
+    Returns:
+       dict: Attendance of the user
+    """
+
     soup = BeautifulSoup(login(username, password), 'html.parser')
     table = "rgMasterTable"
 
@@ -53,8 +76,10 @@ def fetch_attendance(username, password):
         return attendance
     return None
 
+
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route('/fetchAttendance', methods=['POST'])
 def fetchAttendance():
@@ -66,10 +91,10 @@ def fetchAttendance():
         user_login = fetch_attendance(username, password)
         if user_login is not None:
             return jsonify(user_login)
-        
+
         return jsonify({"error": "Invalid Credentials"})
     return jsonify({"error": "Invalid Request"})
-        
+
 
 if __name__ == '__main__':
-    app.run(debug=True,host="0.0.0.0",port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000)
