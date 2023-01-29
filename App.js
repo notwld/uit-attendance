@@ -52,7 +52,6 @@ export default function App() {
         await AsyncStorage.setItem('isLogged', 'true');
         await AsyncStorage.setItem('username', username);
         await AsyncStorage.setItem('password', password);
-
         setIsLogged(true);
         setLoading(false);
       } catch (err) {
@@ -66,9 +65,9 @@ export default function App() {
     <View style={[styles.container]}>
       <View style={styles.header}>
         <Text style={[{ fontSize: 25, color: "white" }]}>UIT Attendance</Text>
-        {isLogged &&
+        {isLogged ?
           <View style={styles.userDetailsContainer}>
-            <Text style={{ color: "white" }}>{name} - {username}</Text>
+            <Text style={{color:"white"}}>{name} - {username}</Text>
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={() => {
@@ -78,7 +77,7 @@ export default function App() {
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
-        }
+       :null }
       </View>
 
       <ScrollView contentContainerStyle={styles.attendanceContainer}>
@@ -97,18 +96,20 @@ export default function App() {
               data={data.CourseCode}
               renderItem={({ item, index }) => {
                 return (
+                  // <View style={styles.attendanceListItem}>
+                  //   <Text style={[styles.attendanceListItemText,{width:50}]}>{item}</Text>
+                  //   <Text style={styles.attendanceListItemText}>{data.TotalClasses[index]}</Text>
+                  //   <Text style={styles.attendanceListItemText}>{data.ClassesTaken[index]}</Text>
+                  //   <Text style={styles.attendanceListItemText}>{data.ClassesAttended[index]}</Text>
+                  //   <Text style={styles.attendanceListItemText}>{data.AttendancePercentage[index]}</Text>
+                  // </View>
                   <View style={styles.attendanceListItem}>
-                    {/* <Text style={[styles.attendanceListItemText,{width:50}]}>{item}</Text>
-                    <Text style={[styles.attendanceListItemText,{paddingLeft:"-16"}]}>{data.TotalClasses[index]}</Text>
-                    <Text style={styles.attendanceListItemText}>{data.ClassesTaken[index]}</Text>
-                    <Text style={styles.attendanceListItemText}>{data.ClassesAttended[index]}</Text>
-                    <Text style={styles.attendanceListItemText}>{data.AttendancePercentage[index]}</Text> */}
-                    <Text style={[{ fontSize: 9, width: 50, paddingLeft: "-9px" }]}>{item}</Text>
-                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9 }]}>{data.TotalClasses[index]}</Text>
-                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 20 }]}>{data.ClassesTaken[index]}</Text>
-                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 25 }]}>{data.ClassesAttended[index]}</Text>
-                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 25 }]}>{data.AttendancePercentage[index]}</Text>
-                  </View>
+              <Text style={[{ fontSize: 9, width: 50, marginVertical: 5 }]}>{item}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 5,marginLeft:20 }]}>{data.TotalClasses[index]}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 5 }]}>{data.ClassesTaken[index]}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 5 }]}>{data.ClassesAttended[index]}</Text>
+              <Text style={[{ fontSize: 9, width: 60, marginVertical: 5  }]}>{data.AttendancePercentage[index]}</Text>
+            </View>
                 )
               }}
               keyExtractor={(item, index) => index.toString()}
@@ -190,28 +191,41 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 20
   },
   attendanceHeader: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    padding: 10, 
-    backgroundColor: '#f5f5f5', 
-    borderRadius: 10, 
-    borderColor: "black", 
-    borderBottomWidth: 1
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, backgroundColor: '#f5f5f5',
+    width: '100%',
+    backgroundColor: '#000',
+    padding: 10
   },
   attendanceHeaderText: {
     color: '#fff',
     fontSize: 9,
-    width: 50
+    width: 45
   },
   attendanceListContainer: {
     width: '100%',
-    marginTop: 10,
-
+    marginTop: 10
   },
-
+  attendanceListItem: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    paddingVertical: 8,
+    // backgroundColor: '#000',
+    // padding: 10
+  },
+  attendanceListItemText: {
+    fontSize: 9
+  },
+  loginContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20
+  },
   loginTitle: {
     fontSize: 20,
     fontWeight: 'bold'
