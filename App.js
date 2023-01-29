@@ -1,140 +1,149 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Switch, Alert,TextInput,TouchableOpacity, FlatList, ScrollView } from 'react-native';
-import React, { useState,useEffect } from 'react';
+import { StyleSheet, Text, View, Switch, Alert, TextInput, TouchableOpacity, FlatList, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
-
-
 export default function App() {
-  const [data, setData] = useState([])
-  const [darkMode, setDarkMode] = useState(false)
+  const [data, setData] = useState([]);
+  const [name, setName] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLogged, setIsLogged] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [username, setUsername] = useState('' || AsyncStorage.getItem('username'))
-  const [password, setPassword] = useState('' || AsyncStorage.getItem('password'))
+  useEffect(() => {
+    AsyncStorage.getItem('username')
+      .then(username => setUsername(username))
+      .catch(err => console.log(err));
 
-  const [isLogged, setIsLogged] = useState(false || AsyncStorage.getItem('isLogged'))
+    AsyncStorage.getItem('password')
+      .then(password => setPassword(password))
+      .catch(err => console.log(err));
 
-  const [loading, setLoading] = useState(false)
+    AsyncStorage.getItem('isLogged')
+      .then(isLogged => setIsLogged(isLogged === 'true'))
+      .catch(err => console.log(err));
+  }, []);
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-  }
+    setDarkMode(!darkMode);
+  };
+
   const login = async () => {
-    if (username == '' || password == '') {
-      Alert.alert('Please enter username and password')
+    if (username === '' || password === '') {
+      Alert.alert('Please enter username and password');
+    } else {
+      setLoading(true);
+      try {
+        const response = await fetch('http://192.168.1.109:5000/fetchAttendance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            "username": username,
+            "password": password
+          })
+        });
+        const data = await response.json();
+        setData(data.data);
+        setName(data.name);
+        await AsyncStorage.setItem('isLogged', 'true');
+        await AsyncStorage.setItem('username', username);
+        await AsyncStorage.setItem('password', password);
+
+        setIsLogged(true);
+        setLoading(false);
+      } catch (err) {
+        Alert.alert('Something went wrong');
+        setLoading(false);
+        console.log(err);
+      }
     }
-    else {
-      AsyncStorage.setItem('isLogged', false)
-      setLoading(true)
-      await fetch('http://192.168.1.109:5000/fetchAttendance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          "username": username,
-          "password": password
-        })
-      })
-
-        .then(response => response.json())
-        .then(data => {
-          console.log(data)
-          setData(data)
-          AsyncStorage.setItem('isLogged', true)
-          AsyncStorage.setItem('username', username)
-          AsyncStorage.setItem('password', password)
-          setIsLogged(true)
-          setLoading(false)
-        })
-        .catch(err => {
-          Alert.alert('Something went wrong')
-          setLoading(false)
-          console.log(err)
-        }
-        )
-
-    }
-  }
-
-  // useEffect(() => {
-  //   if (AsyncStorage.getItem('isLogged') === false) {
-  //     setIsLogged(false)
-  //   }
-  //   else {
-  //     setIsLogged(true)
-  //   }
-  // }, [login])
-
-
-
-
+  };
   return (
-    <View style={[styles.container, darkMode && styles.darkTheme]}>
+    <View style={[styles.container]}>
       <View style={styles.header}>
-        <Text style={[{ fontSize: 25 }, darkMode && styles.darkTheme]}>UIT Attendance</Text>
-        <Switch
-          trackColor={{ false: "#767577", true: "#81b0ff" }}
-          thumbColor={darkMode ? "#f5dd4b" : "#f4f3f4"}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleDarkMode}
-          value={darkMode}
-        />
+        <Text style={[{ fontSize: 25, color: "white" }]}>UIT Attendance</Text>
+        {isLogged &&
+          <View style={styles.userDetailsContainer}>
+            <Text style={{ color: "white" }}>{name} - {username}</Text>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={() => {
+                AsyncStorage.setItem('isLogged', false);
+                setIsLogged(false);
+              }}>
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        }
       </View>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center',width:'100%' }}>
-      {isLogged==true ? <View style={{ flex: 1, width: '100%',marginTop:10}}>
-        <View style={{ marginTop: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10, borderColor: "black", borderWidth: 1 }}>
-          <Text style={[{ fontSize: 9 }]}>Course</Text>
-          <Text style={[{ fontSize: 9 }]}>Total Classes</Text>
-          <Text style={[{ fontSize: 9 }]}>Classes Taken</Text>
-          <Text style={[{ fontSize: 9 }]}>Taken Classes</Text>
-          <Text style={[{ fontSize: 9 }]}>Percentage</Text>
-        </View>
-        
-        <FlatList
-        style={{width: '100%' }}
-        data={data.CourseCode}
-        renderItem={({ item, index }) => {
-          return (
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 5, backgroundColor: '#f5f5f5', borderColor: "black", borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderRadius: 10 }}>
-              <Text style={[{ fontSize: 9, width: 50, marginVertical: 9 }]}>{item}</Text>
-              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 14 }]}>{data.TotalClasses[index]}</Text>
-              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesTaken[index]}</Text>
-              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 10 }]}>{data.ClassesAttended[index]}</Text>
-              <Text style={[{ fontSize: 9, width: 60, marginVertical: 9 }]}>{data.AttendancePercentage[index]}</Text>
+
+      <ScrollView contentContainerStyle={styles.attendanceContainer}>
+        {isLogged ?
+          <View style={styles.attendanceDataContainer}>
+            <View style={styles.attendanceHeader}>
+              <Text style={styles.attendanceHeaderText}>Course</Text>
+              <Text style={styles.attendanceHeaderText}>Total Classes</Text>
+              <Text style={styles.attendanceHeaderText}>Classes Taken</Text>
+              <Text style={styles.attendanceHeaderText}>Taken Classes</Text>
+              <Text style={styles.attendanceHeaderText}>Percentage</Text>
             </View>
-          )
-        }}
-        keyExtractor={(item, index) => index.toString()}
-      />
-      
-      </View> :<View style={{ flex: 1, width: '100%', padding: 20,flexDirection:'column',alignItems:'center',justifyContent:'center' }}>
-        <Text style={{ fontSize: 20, marginTop: 50 }}>Login</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
-          <Text style={{ fontSize: 15, marginRight: 10 }}>Username</Text>
-          <TextInput
-            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1,paddingHorizontal:10  }}
-            onChangeText={text => setUsername(text)}
-            value={username}
-          />
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
-          <Text style={{ fontSize: 15, marginRight: 10 }}>Password</Text>
-          <TextInput
-            style={{ height: 40, width: 200, borderColor: 'gray', borderWidth: 1,paddingHorizontal:10 }}
-            onChangeText={text => setPassword(text)}
-            value={password}
-          />
-        </View>
-        <TouchableOpacity style={{width:90, backgroundColor: 'blue', padding: 10, marginTop: 20,flexDirection:'row',alignItems:'center',justifyContent:'center' }} onPress={login}>
-          <Text style={{ color: '#fff' }}>Login</Text>
-        </TouchableOpacity>
-      </View> }
+
+            <FlatList
+              style={styles.attendanceListContainer}
+              data={data.CourseCode}
+              renderItem={({ item, index }) => {
+                return (
+                  <View style={styles.attendanceListItem}>
+                    {/* <Text style={[styles.attendanceListItemText,{width:50}]}>{item}</Text>
+                    <Text style={[styles.attendanceListItemText,{paddingLeft:"-16"}]}>{data.TotalClasses[index]}</Text>
+                    <Text style={styles.attendanceListItemText}>{data.ClassesTaken[index]}</Text>
+                    <Text style={styles.attendanceListItemText}>{data.ClassesAttended[index]}</Text>
+                    <Text style={styles.attendanceListItemText}>{data.AttendancePercentage[index]}</Text> */}
+                    <Text style={[{ fontSize: 9, width: 50, paddingLeft: "-9px" }]}>{item}</Text>
+                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9 }]}>{data.TotalClasses[index]}</Text>
+                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 20 }]}>{data.ClassesTaken[index]}</Text>
+                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 25 }]}>{data.ClassesAttended[index]}</Text>
+                    <Text style={[{ fontSize: 9, width: 60, marginVertical: 9, paddingLeft: 25 }]}>{data.AttendancePercentage[index]}</Text>
+                  </View>
+                )
+              }}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          </View>
+          :
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginTitle}>Login</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Username</Text>
+              <TextInput
+                style={styles.inputField}
+                onChangeText={text => setUsername(text)}
+                value={username}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <TextInput
+                style={styles.inputField}
+                onChangeText={text => setPassword(text)}
+                value={password}
+                secureTextEntry={true}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={login}
+            >
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        }
       </ScrollView>
-
-
-      <StatusBar hidden />
+      <StatusBar style="auto" hidden={true} />
     </View>
   );
 }
@@ -145,19 +154,100 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  darkTheme: {
-    backgroundColor: '#000',
-    color: '#fff'
+    color: '#000'
   },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     width: '100%',
-    padding: 20
+    height: 90,
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column'
+  },
+  userDetailsContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // marginLeft: 10
+  },
+  logoutButton: {
+    backgroundColor: '#fff',
+    padding: 3,
+    borderRadius: 5,
+    // marginRight: 25
+    marginTop: 5
+  },
+  logoutButtonText: {
+    color: '#000'
+  },
+  attendanceContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20
+  },
+  attendanceDataContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attendanceHeader: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 10, 
+    backgroundColor: '#f5f5f5', 
+    borderRadius: 10, 
+    borderColor: "black", 
+    borderBottomWidth: 1
+  },
+  attendanceHeaderText: {
+    color: '#fff',
+    fontSize: 9,
+    width: 50
+  },
+  attendanceListContainer: {
+    width: '100%',
+    marginTop: 10,
+
+  },
+
+  loginTitle: {
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  inputContainer: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+  inputField: {
+    // width: '200%',
+    // height: 40,
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 5,
+    padding: 10,
+    marginTop: 10
+  },
+  loginButton: {
+    width: '100%',
+    // height: 40,
+    padding: 10,
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 5,
+    marginTop: 20
+  },
+  loginButtonText: {
+    color: '#fff'
   }
+
 });

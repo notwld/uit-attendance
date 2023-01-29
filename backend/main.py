@@ -45,6 +45,8 @@ def fetch_attendance(username, password):
     """
 
     soup = BeautifulSoup(login(username, password), 'html.parser')
+    name = soup.find('span', attrs={'id': 'ctl00_user_name'})
+    print(name.text)
     table = "rgMasterTable"
 
     table = soup.find('table', attrs={'class': table})
@@ -73,7 +75,7 @@ def fetch_attendance(username, password):
             attendance["ClassesAttended"].append(data[i][4])
             attendance["AttendancePercentage"].append(data[i][5])
 
-        return attendance
+        return attendance, name.text
     return None
 
 
@@ -88,8 +90,8 @@ def fetch():
         username = credentials['username']
         password = credentials['password']
 
-        user_login = fetch_attendance(username, password)
-        return jsonify(user_login)
+        user_login = fetch_attendance(username, password)[0]
+        return jsonify({"data": user_login, "name": fetch_attendance(username, password)[1]})
 
         # return jsonify({"error": "Invalid Credentials"})
     return jsonify({"error": "Invalid Request"})
